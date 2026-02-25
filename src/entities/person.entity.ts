@@ -1,4 +1,6 @@
-export class Person {
+import { IPerson } from './models/person.interface'
+
+export class Person implements IPerson {
   id?: number
   cpf: string
   name: string
@@ -6,7 +8,13 @@ export class Person {
   email: string
   user_id?: number
 
-  constructor(id: number, cpf: string, name: string, birth: Date, email: string) {
+  constructor(
+    id: number,
+    cpf: string,
+    name: string,
+    birth: Date,
+    email: string,
+  ) {
     this.id = id
     this.cpf = cpf
     this.name = name
