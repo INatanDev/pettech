@@ -32,6 +32,8 @@
     "dotenv": "17.3.1",
     "fastify": "5.7.4",
     "pg": "8.18.0",
+    "reflect-metadata": "0.2.2",
+    "typeorm": "0.3.28",
     "zod": "4.3.6"
   }
 }
