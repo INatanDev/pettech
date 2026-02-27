@@ -34,7 +34,7 @@ export class Product implements IProduct {
     name: 'image_url',
     type: 'varchar',
   })
-  image_url: string
+  image: string
 
   @Column({
     name: 'price',

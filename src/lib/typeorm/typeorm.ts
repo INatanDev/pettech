@@ -2,6 +2,7 @@ import { DataSource } from 'typeorm'
 import { env } from '@/env'
 import { Product } from '@/entities/product.entity'
 import { Category } from '@/entities/category.entity'
+import { ProductAutoGenerateUUID1772142249725 } from './migrations/1772142249725-ProductAutoGenerateUUID'
 
 export const appDataSource = new DataSource({
   type: 'postgres',
@@ -11,6 +12,7 @@ export const appDataSource = new DataSource({
   password: env.DATABASE_PASSWORD,
   database: env.DATABASE_NAME,
   entities: [Product, Category],
+  migrations: [ProductAutoGenerateUUID1772142249725],
   logging: env.NODE_ENV === 'development',
 })
 

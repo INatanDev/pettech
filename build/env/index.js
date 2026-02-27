@@ -27,7 +27,12 @@ var import_config = require("dotenv/config");
 var import_zod = require("zod");
 var envSchema = import_zod.z.object({
   PORT: import_zod.z.coerce.number().default(3e3),
-  NODE_ENVS: import_zod.z.enum(["development", "production", "test"]).default("development")
+  NODE_ENV: import_zod.z.enum(["development", "production", "test"]).default("development"),
+  DATABASE_USER: import_zod.z.string(),
+  DATABASE_HOST: import_zod.z.string(),
+  DATABASE_NAME: import_zod.z.string(),
+  DATABASE_PASSWORD: import_zod.z.string(),
+  DATABASE_PORT: import_zod.z.coerce.number()
 });
 var _env = envSchema.safeParse(process.env);
 if (!_env.success) {

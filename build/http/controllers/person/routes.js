@@ -24,20 +24,69 @@ __export(routes_exports, {
 });
 module.exports = __toCommonJS(routes_exports);
 
-// src/repositories/person.repository.ts
-var PersonRepository = class {
-  async findById(id) {
-    return {
-      id,
-      cpf: "12345678900",
-      name: "John Doe",
-      birth: /* @__PURE__ */ new Date("1990-01-01"),
-      email: "john.doe@example.com",
-      user_id: 1
-    };
+// src/lib/pg/db.ts
+var import_pg = require("pg");
+
+// src/env/index.ts
+var import_config = require("dotenv/config");
+var import_zod = require("zod");
+var envSchema = import_zod.z.object({
+  PORT: import_zod.z.coerce.number().default(3e3),
+  NODE_ENV: import_zod.z.enum(["development", "production", "test"]).default("development"),
+  DATABASE_USER: import_zod.z.string(),
+  DATABASE_HOST: import_zod.z.string(),
+  DATABASE_NAME: import_zod.z.string(),
+  DATABASE_PASSWORD: import_zod.z.string(),
+  DATABASE_PORT: import_zod.z.coerce.number()
+});
+var _env = envSchema.safeParse(process.env);
+if (!_env.success) {
+  console.error("Invalid environment variables:", _env.error.format());
+  throw new Error("Invalid environment variables");
+}
+var env = _env.data;
+
+// src/lib/pg/db.ts
+var CONFIG = {
+  user: env.DATABASE_USER,
+  host: env.DATABASE_HOST,
+  database: env.DATABASE_NAME,
+  password: env.DATABASE_PASSWORD,
+  port: env.DATABASE_PORT
+};
+var Database = class {
+  constructor() {
+    this.pool = new import_pg.Pool(CONFIG);
+    this.connection();
   }
-  async create(person) {
-    return person;
+  async connection() {
+    try {
+      this.client = await this.pool.connect();
+    } catch (error) {
+      console.error(`Error connecting to database: ${error}`);
+      throw new Error(`Error connecting to database: ${error}`);
+    }
+  }
+  get clientInstance() {
+    return this.client;
+  }
+};
+var database = new Database();
+
+// src/repositories/pg/person.repository.ts
+var PersonRepository = class {
+  async create({
+    cpf,
+    name,
+    birth,
+    email,
+    user_id
+  }) {
+    const result = await database.clientInstance?.query(
+      "INSERT INTO person (cpf, name, birth, email, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [cpf, name, birth, email, user_id]
+    );
+    return result?.rows[0];
   }
 };
 
@@ -51,30 +100,35 @@ var CreatePersonUseCase = class {
   }
 };
 
+// src/useCases/factory/make-create-person-use-case.ts
+function makeCreatePersonUseCase() {
+  const personRepository = new PersonRepository();
+  const createPersonUseCase = new CreatePersonUseCase(personRepository);
+  return createPersonUseCase;
+}
+
 // src/http/controllers/person/create.ts
-var import_zod = require("zod");
+var import_zod2 = require("zod");
 async function create(request, reply) {
-  const registerBodySchema = import_zod.z.object({
-    cpf: import_zod.z.string(),
-    name: import_zod.z.string(),
-    birth: import_zod.z.date(),
-    email: import_zod.z.string().email()
+  const registerBodySchema = import_zod2.z.object({
+    cpf: import_zod2.z.string(),
+    name: import_zod2.z.string(),
+    birth: import_zod2.z.coerce.date(),
+    email: import_zod2.z.string().email(),
+    user_id: import_zod2.z.coerce.number()
   });
-  const { cpf, name, birth, email } = registerBodySchema.parse(request.body);
-  try {
-    const personRepository = new PersonRepository();
-    const createPersonUseCase = new CreatePersonUseCase(personRepository);
-    await createPersonUseCase.handler({
-      cpf,
-      name,
-      birth,
-      email
-    });
-    reply.status(201).send();
-  } catch (error) {
-    console.log(error);
-    throw new Error("Internal server error");
-  }
+  const { cpf, name, birth, email, user_id } = registerBodySchema.parse(
+    request.body
+  );
+  const createPersonUseCase = makeCreatePersonUseCase();
+  const person = await createPersonUseCase.handler({
+    cpf,
+    name,
+    birth,
+    email,
+    user_id
+  });
+  reply.status(201).send(person);
 }
 
 // src/http/controllers/person/routes.ts

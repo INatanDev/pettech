@@ -24,13 +24,12 @@ __export(person_entity_exports, {
 });
 module.exports = __toCommonJS(person_entity_exports);
 var Person = class {
-  constructor(id, cpf, name, birth, email, user_id) {
+  constructor(id, cpf, name, birth, email) {
     this.id = id;
     this.cpf = cpf;
     this.name = name;
     this.birth = birth;
     this.email = email;
-    this.user_id = user_id;
   }
 };
 // Annotate the CommonJS export names for ESM import in node:
